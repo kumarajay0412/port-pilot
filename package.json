@@ -1,0 +1,25 @@
+{
+  "name": "portpilot",
+  "version": "0.1.0",
+  "main": "main.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder -m"
+  },
+  "build": {
+    "appId": "com.portpilot.app",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg"
+      ],
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.0.0"
+  }
+}

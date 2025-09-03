@@ -1,0 +1,11 @@
+/node_modules
+/dist
+/build
+/dist-electron
+/dist-electron-build
+/dist-electron-build-linux
+/dist-electron-build-mac
+/dist-electron-build-win
+/dist-electron-build-linux-arm64
+./dist-electron-build-linux-arm64-unpacked
+/dist-electron-build-linux-arm64-unpacked
