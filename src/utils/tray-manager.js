@@ -135,7 +135,7 @@ async function updateTrayMenu(tray, currentView, getPortsData, getMemoryData, ki
   menuItems.push({ type: 'separator' });
 
   // Add data based on current view
-  await addViewData(menuItems, currentView, getPortsData, getMemoryData, killProcess);
+  await addViewData(menuItems, currentView, getPortsData, getMemoryData, killProcess, tray);
 
   menuItems.push({ type: 'separator' });
   menuItems.push({
@@ -148,7 +148,7 @@ async function updateTrayMenu(tray, currentView, getPortsData, getMemoryData, ki
 }
 
 // Add data based on current view
-async function addViewData(menuItems, currentView, getPortsData, getMemoryData, killProcess) {
+async function addViewData(menuItems, currentView, getPortsData, getMemoryData, killProcess, tray) {
   try {
     if (currentView === 'ports') {
       const ports = await getPortsData();
@@ -257,7 +257,7 @@ async function updateTrayMenuForView(tray, view, getPortsData, getMemoryData, ki
   menuItems.push({ type: 'separator' });
 
   // Add data based on view
-  await addViewData(menuItems, view, getPortsData, getMemoryData, killProcess);
+  await addViewData(menuItems, view, getPortsData, getMemoryData, killProcess, tray);
 
   menuItems.push({ type: 'separator' });
   menuItems.push({
