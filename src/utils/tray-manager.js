@@ -1,55 +1,96 @@
-const { Tray, nativeImage, Menu } = require('electron');
+const { app, Tray, nativeImage, Menu } = require('electron');
 const path = require('path');
 const { getPortDescription } = require('../../port-mapping');
 
-// Create tray icon
+// Create tray icon using the provided PNG file
 async function createTray() {
   try {
-    const iconSize = 16; // Standard size for tray icons
-    const bitmap = Buffer.alloc(iconSize * iconSize * 4); // RGBA
+    const iconPath = path.join(__dirname, '../../assets/icon.png');
+    console.log('Loading tray icon from:', iconPath);
 
-    // Create a bright, solid orange circle - very visible
-    for (let y = 0; y < iconSize; y++) {
-      for (let x = 0; x < iconSize; x++) {
-        const offset = (y * iconSize + x) * 4;
-        const centerX = iconSize / 2, centerY = iconSize / 2;
-        const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+    const image = nativeImage.createFromPath(iconPath);
+    console.log('Loaded icon size:', image.getSize());
 
-        // Solid orange circle - make it bright and visible
-        if (distance < 6) {
-          bitmap[offset] = 255;     // R - bright red
-          bitmap[offset + 1] = 165; // G - orange
-          bitmap[offset + 2] = 0;   // B - no blue
-          bitmap[offset + 3] = 255; // A - fully opaque
-        } else {
-          // Make background white and opaque
-          bitmap[offset] = 255;     // R - white background
-          bitmap[offset + 1] = 255; // G
-          bitmap[offset + 2] = 255; // B
-          bitmap[offset + 3] = 255; // A - fully opaque
-        }
-      }
+    // Check if the image loaded successfully
+    if (image.getSize().width === 0 || image.getSize().height === 0) {
+      console.log('PNG loading failed, creating fallback bitmap...');
+      throw new Error('PNG icon failed to load');
     }
 
-    const image = nativeImage.createFromBuffer(bitmap, { width: iconSize, height: iconSize });
-    // Set as template image for proper macOS integration
-    image.setTemplateImage(true);
+    // Resize to appropriate tray icon size (16x16 for standard, or keep original if smaller)
+    let finalImage = image;
+    const originalSize = image.getSize();
 
-    const tray = new Tray(image);
+    // If the image is very large, resize it for better tray display
+    if (originalSize.width > 64 || originalSize.height > 64) {
+      console.log('Resizing large icon for tray display...');
+      finalImage = image.resize({ width: 16, height: 16, quality: 'best' });
+      console.log('Resized to:', finalImage.getSize());
+    }
+
+    // Set as template image for proper macOS integration
+    finalImage.setTemplateImage(true);
+
+    const tray = new Tray(finalImage);
     return tray;
   } catch (error) {
-    console.error('Tray creation failed:', error);
+    console.error('Tray creation with PNG failed:', error);
 
-    // Last resort: empty tray
+    // Fallback: create a simple bitmap icon
     try {
-      const emptyImage = nativeImage.createEmpty();
-      const tray = new Tray(emptyImage);
-      tray.setToolTip('PortPilot - Fallback Mode');
+      console.log('Creating fallback bitmap icon...');
+      const iconSize = 16;
+      const bitmap = Buffer.alloc(iconSize * iconSize * 4); // RGBA
+
+      // Create a bright, solid orange circle - very visible
+      for (let y = 0; y < iconSize; y++) {
+        for (let x = 0; x < iconSize; x++) {
+          const offset = (y * iconSize + x) * 4;
+          const centerX = iconSize / 2, centerY = iconSize / 2;
+          const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+
+          // Solid orange circle
+          if (distance < 6) {
+            bitmap[offset] = 255;     // R - bright red
+            bitmap[offset + 1] = 165; // G - orange
+            bitmap[offset + 2] = 0;   // B - no blue
+            bitmap[offset + 3] = 255; // A - fully opaque
+          } else {
+            // Transparent background for template image
+            bitmap[offset] = 0;       // R
+            bitmap[offset + 1] = 0;   // G
+            bitmap[offset + 2] = 0;   // B
+            bitmap[offset + 3] = 0;   // A - fully transparent
+          }
+        }
+      }
+
+      const image = nativeImage.createFromBuffer(bitmap, { width: iconSize, height: iconSize });
+      image.setTemplateImage(true);
+
+      const tray = new Tray(image);
+      tray.setToolTip('PortPilot - Using Fallback Icon');
       return tray;
     } catch (finalError) {
       console.error('All tray creation methods failed:', finalError);
       return null;
     }
+  }
+}
+
+// Set the application icon (dock icon)
+function setAppIcon() {
+  try {
+    const iconPath = path.join(__dirname, '../../assets/icon.png');
+    const image = nativeImage.createFromPath(iconPath);
+
+    if (image.getSize().width > 0 && image.getSize().height > 0) {
+      if (app.dock && app.dock.setIcon) {
+        app.dock.setIcon(image);
+      }
+    }
+  } catch (error) {
+    console.error('Failed to set app icon:', error);
   }
 }
 
@@ -186,7 +227,7 @@ async function updateTrayMenuForView(tray, view, getPortsData, getMemoryData, ki
 
   // Add view toggle
   menuItems.push({
-    label: view === 'ports' ? '📊 Show Memory Usage' : '🔌 Show Active Ports',
+    label: view === 'ports' ? '💾 Show Memory Usage' : '🔌 Show Active Ports',
     click: () => {
       const newView = view === 'ports' ? 'memory' : 'ports';
       setTimeout(async () => {
@@ -230,6 +271,7 @@ async function updateTrayMenuForView(tray, view, getPortsData, getMemoryData, ki
 
 module.exports = {
   createTray,
+  setAppIcon,
   updateTrayMenu,
   updateTrayMenuForView
 };

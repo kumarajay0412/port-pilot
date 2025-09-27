@@ -80,10 +80,48 @@ async function getMemoryData() {
       }
     }
 
-    // Get total system memory
-    const totalMemOut = await sh('/usr/sbin/system_profiler', ['SPMemoryDataType']);
-    const totalMemMatch = totalMemOut.match(/Size:\s+(\d+)\s+GB/i);
-    const totalMemoryGB = totalMemMatch ? parseInt(totalMemMatch[1]) : 0;
+    // Get total system memory using multiple methods
+    let totalMemoryGB = 0;
+    try {
+      // Method 1: Try system_profiler first
+      let totalMemOut = await sh('/usr/sbin/system_profiler', ['SPMemoryDataType']);
+
+      // Try multiple patterns to match different output formats
+      let totalMemMatch = totalMemOut.match(/Memory:\s+(\d+)\s+GB/i);
+      if (totalMemMatch) {
+        totalMemoryGB = parseInt(totalMemMatch[1]);
+      } else {
+        // Try alternative format
+        totalMemMatch = totalMemOut.match(/Size:\s+(\d+)\s+GB/i);
+        if (totalMemMatch) {
+          totalMemoryGB = parseInt(totalMemMatch[1]);
+        } else {
+          // Try MB format
+          totalMemMatch = totalMemOut.match(/Memory:\s+(\d+)\s+MB/i);
+          if (totalMemMatch) {
+            totalMemoryGB = Math.round(parseInt(totalMemMatch[1]) / 1024); // Convert MB to GB
+          }
+        }
+      }
+
+      // Method 2: Fallback to sysctl if system_profiler didn't work
+      if (totalMemoryGB === 0) {
+        try {
+          const sysctlOut = await sh('/usr/sbin/sysctl', ['-n', 'hw.memsize']);
+          const totalBytes = parseInt(sysctlOut.trim());
+          totalMemoryGB = Math.round(totalBytes / (1024 * 1024 * 1024)); // Convert bytes to GB
+          console.log('Detected memory via sysctl:', totalMemoryGB, 'GB');
+        } catch (sysctlError) {
+          console.error('sysctl memory detection failed:', sysctlError);
+        }
+      }
+
+      console.log('Final detected total memory:', totalMemoryGB, 'GB');
+    } catch (error) {
+      console.error('Failed to detect system memory:', error);
+      totalMemoryGB = 0;
+    }
+
     const totalMemoryKB = totalMemoryGB * 1024 * 1024; // Convert GB to KB
 
     procs.sort((a, b) => b.rssKB - a.rssKB);

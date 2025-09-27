@@ -1,13 +1,16 @@
 const { app, ipcMain } = require('electron');
 const { getPortsData, getMemoryData } = require('./utils/system-info');
 const { killProcess, killPort, killPid } = require('./utils/process-manager');
-const { createTray, updateTrayMenu } = require('./utils/tray-manager');
+const { createTray, setAppIcon, updateTrayMenu } = require('./utils/tray-manager');
 
 let tray;
 let currentView = 'ports';
 
 async function initializeApp() {
   try {
+    // Set the application icon
+    setAppIcon();
+
     // Hide dock icon if available (macOS menu-bar style)
     if (app.dock && typeof app.dock.hide === 'function') {
       app.dock.hide();
