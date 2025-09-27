@@ -2,6 +2,8 @@
 
 A **production-ready, modular system monitoring application** built with Electron that runs in your macOS menu bar. PortPilot provides real-time monitoring of network ports and memory usage with an intuitive, user-friendly interface.
 
+https://github.com/user-attachments/assets/331d9174-fcf3-4fca-83c7-f6832d4446e1
+
 ## ✨ Features
 
 ### 🔌 **Port Monitoring**
